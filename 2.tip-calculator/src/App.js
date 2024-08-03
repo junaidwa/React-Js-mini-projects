@@ -14,7 +14,8 @@ function TipCalculator(){
   const [tip,setTip]=useState(' ')
   const [percentage1,setpercentage1]=useState(0)
   const [percentage2, setpercentage2]=useState(0)
-  const totaltip = tip * percentage1 *percentage2 /2*100; 
+  // const totaltip = tip * percentage1 *percentage2 /2*100; 
+  const totaltip = tip +percentage1 + percentage2;
 
 
   function handlereset(){
@@ -29,7 +30,7 @@ function TipCalculator(){
       <Tipinput  bill={tip} onsettip={setTip}/>
       <Selectpercentage  percen={percentage1} onsetpercen={setpercentage1}>Select Own Feedback </Selectpercentage>
       <Selectpercentage  percen={percentage2} onsetpercen={setpercentage2}>Select Freiend Feedback </Selectpercentage>
-      <Output  bill={tip} total={totaltip}  />
+      <Output  bill={tip} total={totaltip}  percen1= {percentage1} percen2={percentage2} />
       <Button onreset={handlereset} />
 
 
@@ -56,15 +57,15 @@ function Selectpercentage({children,percen,onsetpercen}){
         <option value='15'>It was Good (15%)</option>
         <option value='20'>Absolutely Amazing (20%)</option>
       </select>
-
     </div>
   )
 }
-function Output({bill,total}){
+function Output({bill,total,percen1,percen2}){
+  const perce= (percen1 +percen2)/2 ;
   return (
   
  <h3>
-  Toal pay {bill}( {total} + B)
+  Toal pay {bill+perce}( {percen1} + {percen2})
  </h3>
    
   )
