@@ -1,0 +1,7 @@
+.box{
+  display: block;
+  background-color: rgb(219, 217, 217);
+  border: 2px solid black;
+  margin:  0 auto;
+  padding: 10px;
+}
