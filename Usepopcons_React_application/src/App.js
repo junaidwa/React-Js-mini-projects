@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const tempMovieData = [
   {
@@ -50,9 +50,104 @@ const tempWatchedData = [
 const average = (arr) =>
   arr.reduce((acc, cur, i, arr) => acc + cur / arr.length, 0);
 
+const KEY = "7a0948e9";
+
 export default function App() {
-  const [movies, setMovies] = useState(tempMovieData);
-  const [watched, setWatched] = useState(tempWatchedData);
+  const [movies, setMovies] = useState([]);
+  const [watched, setWatched] = useState([]);
+  const [isLoading, setisLoading] = useState(false);
+  const [error, seterror] = useState();
+
+  //First of all we fetch data in wrong way in react application:
+  // fetch(`http://www.omdbapi.com/?apikey=${KEY}&s=interstellar`)
+  //   .then((res) => res.json())
+  //   .then((data) => {
+  //     setMovies(data.Search); //It's work but in network sectin there are infinte number of requests send this. Because as we learni in previous section that is we don't update any state in render section .When we break rule of react js then we see this error.To overcome this proble  we use useeffect hook .If we use console.log to get data in console then it's work fine.In this case our component state change or update on every render but we use useeffect hook to control rendering.In this code our componenet render in four way. First when intial render menas intial app and second when state and props chagne third when parent component render and fourth with virtual Dom etc.
+  //   });
+
+  //We use useeffect hook and allow to render only when component mount means for initial render by passing empty dependency array.
+
+  // useEffect(function(){
+  //     fetch(`http://www.omdbapi.com/?apikey=${KEY}&s=interstellar`)
+  //   .then((res) => res.json())
+  //   .then((data) => {
+  //     setMovies(data.Search);
+  //   })
+
+  // },[]) //Now it's work fine and there are no infinite number of requests.
+
+  //Theroy Lectures:
+  //First of all I explain side effects. Side effect is basically interaction between react component and outside the word of component.For example when we work with API then we want to create side effects to fetch data from API.
+  //There are two ways to create side effects .One is eventhandler and second effects(useeffecthooks).
+  //Event handler create side effect when certain events handle but on the other hand effects create side event when components mount or intial render.
+  //Event handler is also a preferred way of creating side effects but to solve or overcome sove problem use effects to create side effects with the help of dependency array.When dependency array is empty then means we want ot create side effects only when component mounts.
+
+  //As we know that we fetch data with asyn function and promises so We use asyn function to fect movies data.
+  const query = `interstellar`;
+
+  useEffect(() => {
+    async function fetchMovies() {
+      try {
+        setisLoading(true); // Start loading
+        const res = await fetch(
+          `http://www.omdbapi.com/?apikey=${KEY}&s=${query}`
+        );
+
+        if (!res.ok) throw new Error("Fetch failed");
+
+        const data = await res.json();
+
+        if (!data.Search) {
+          throw new Error("No movies found");
+        }
+
+        if (data.response === "false") throw new Error("Movies Not Fount");
+
+        setMovies(data.Search);
+        seterror(null); // Clear any previous errors
+      } catch (err) {
+        console.log(err.message);
+        seterror(err.message);
+      } finally {
+        setisLoading(false); // End loading
+      }
+    }
+
+    fetchMovies();
+  }, []);
+  //     //Now we get two array object becasue this is due to strict mode of react js.If we remove strit mode from index.js then we have return only one objects. And returning of two object only in development stage.When we deploy our application then by default we get only one objects.
+
+  //Now it's work fine .
+
+  //Now we create a loader to that is shown on the space of movies when our movies loaded from api.
+
+  //Now we handle with error if we put any wrong query in input search filed.
+
+
+  //Now we learn about dependency array:
+  //It's tell use effect hook that what to run.
+  //Without this useeffect don't know about what to learn.
+  // There is neccessary for react application that all state and props of useeffect hook pass in dependency array.
+  //If dependency array are empty means useeffect hook run only on mount.
+  //If have some state and props then run on mount and also when given state and props updtate then it's re-render.
+  // If we don't put dependecy array in useeffect hook then means component re-render on every rendering.
+  // Basically above concept are not life cycle of useeffect. It's a syncronization.
+  //Syncronization means conccect between UI Design and data source.
+
+  //Now we learn about when are effect executed and also learn about time line  of component executions.
+  //First of all render (mount) or initial render.
+  //Then commit 
+  //Then browser paint
+  //Then Effects
+  //If state change 
+  //Then re-render
+  //Commit 
+   //Befroe browser paint there is a one state of layout effects
+   //Then browser paint
+   //Effect
+
+   //At then end 
+   //Effect are  unmounts.
 
   return (
     <>
@@ -64,7 +159,10 @@ export default function App() {
       </Navbar>
       <Main movies={movies}>
         <MoviesBox>
-          <MovieList movie={movies} />
+          {/* {isLoading ? <Footer /> : <MovieList movie={movies} />}{" "} */}
+          {isLoading && <Loader />}
+          {!isLoading && !error && <MovieList movie={movies} />}
+          {error && <ErrorMessage message={error} />}
         </MoviesBox>
         <MoviesBox>
           <SummaryWathed watched={watched} />
@@ -73,6 +171,16 @@ export default function App() {
         </MoviesBox>
       </Main>
     </>
+  );
+}
+function Loader() {
+  return <div className="loader">Loading...</div>;
+}
+function ErrorMessage({ message }) {
+  return (
+    <p className="error">
+      <span>😡 {message}</span>
+    </p>
   );
 }
 
