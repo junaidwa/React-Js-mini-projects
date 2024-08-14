@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-
+import StarRating from "./StarRating";
 const tempMovieData = [
   {
     imdbID: "tt1375666",
@@ -53,16 +53,22 @@ const average = (arr) =>
 const KEY = "7a0948e9";
 
 export default function App() {
+  const [query, setQuery] = useState("inception");
   const [movies, setMovies] = useState([]);
   const [watched, setWatched] = useState([]);
   const [isLoading, setisLoading] = useState(false);
   const [error, seterror] = useState();
+  const [selectedID, setselectedID] = useState(null);
+
+  function HandleClosebtn() {
+    setselectedID(null);
+  }
 
   //First of all we fetch data in wrong way in react application:
   // fetch(`http://www.omdbapi.com/?apikey=${KEY}&s=interstellar`)
   //   .then((res) => res.json())
   //   .then((data) => {
-  //     setMovies(data.Search); //It's work but in network sectin there are infinte number of requests send this. Because as we learni in previous section that is we don't update any state in render section .When we break rule of react js then we see this error.To overcome this proble  we use useeffect hook .If we use console.log to get data in console then it's work fine.In this case our component state change or update on every render but we use useeffect hook to control rendering.In this code our componenet render in four way. First when intial render menas intial app and second when state and props chagne third when parent component render and fourth with virtual Dom etc.
+  //     setMovies(data.Search); //It's work but in network sectin there are infinte number of requests send this. Because as we learn in previous section that is we don't update any state in render section .When we break rule of react js then we see this error.To overcome this problem  we use useeffect hook .If we use console.log to get data in console then it's work fine.In this case our component state change or update on every render but we use useeffect hook to control rendering.In this code our componenet render in four way. First when intial render menas intial app and second when state and props chagne third when parent component render and fourth with virtual Dom etc.
   //   });
 
   //We use useeffect hook and allow to render only when component mount means for initial render by passing empty dependency array.
@@ -75,24 +81,59 @@ export default function App() {
   //   })
 
   // },[]) //Now it's work fine and there are no infinite number of requests.
+  //[] is the dependency array and empty means given effect render only on mount.
 
   //Theroy Lectures:
   //First of all I explain side effects. Side effect is basically interaction between react component and outside the word of component.For example when we work with API then we want to create side effects to fetch data from API.
   //There are two ways to create side effects .One is eventhandler and second effects(useeffecthooks).
-  //Event handler create side effect when certain events handle but on the other hand effects create side event when components mount or intial render.
+  //Event handler create side effect when certain events handle but on the other hand effects create side effects when components mount or intial render.
   //Event handler is also a preferred way of creating side effects but to solve or overcome sove problem use effects to create side effects with the help of dependency array.When dependency array is empty then means we want ot create side effects only when component mounts.
 
   //As we know that we fetch data with asyn function and promises so We use asyn function to fect movies data.
-  const query = `interstellar`;
+  // const tempQuery = `interstellar`; //Now it's not use because not we use query state that store value of search input.
+
+  //Now we implement previous lecture of dependency array in practice in above code:
+  //First of all I implement some experiment before going to our application:
+  // useEffect(function(){
+  //   console.log("A")
+  // }) //with no dependency array means render with every things
+
+  // useEffect(function(){
+  //   console.log("B")
+  // },[])  //Empty array means render only on mount
+  // console.log("C")
+  //In console there are many number of print due to many render but important thing is that in first C print bcz we use asyncronys Coding and alone console print before with out any other waiting.
+  //Then A print because It's console render on every mount
+  //And then B render and it's console render only on only intial mount.
+
+  // useEffect(function () {
+  //   console.log("After Initial Render");
+  // }, []);
+  // useEffect(function () {
+  //   console.log("On Every Render");
+  // });
+  // useEffect(
+  //   function () {
+  //     console.log("Only when state update");
+  //   },
+  //   [query]
+  // );
+  // console.log("Not depends on any rendering");
+  //When we upddate state then in given order console log prints in browser:
+  //  Not depends on any rendering
+  //  After Initial Render
+  //  On Every Render
+  //  Only when state update
 
   useEffect(() => {
     async function fetchMovies() {
       try {
         setisLoading(true); // Start loading
+        seterror("");
+
         const res = await fetch(
           `http://www.omdbapi.com/?apikey=${KEY}&s=${query}`
         );
-
         if (!res.ok) throw new Error("Fetch failed");
 
         const data = await res.json();
@@ -104,6 +145,7 @@ export default function App() {
         if (data.response === "false") throw new Error("Movies Not Fount");
 
         setMovies(data.Search);
+        console.log(data.Search);
         seterror(null); // Clear any previous errors
       } catch (err) {
         console.log(err.message);
@@ -112,9 +154,15 @@ export default function App() {
         setisLoading(false); // End loading
       }
     }
+    if (!query.length) {
+      //If there is no search query then movies box are empty with no any message. In second option we put any default move in query State.
+      setMovies([]);
+      seterror("");
+      return;
+    }
 
     fetchMovies();
-  }, []);
+  }, [query]);
   //     //Now we get two array object becasue this is due to strict mode of react js.If we remove strit mode from index.js then we have return only one objects. And returning of two object only in development stage.When we deploy our application then by default we get only one objects.
 
   //Now it's work fine .
@@ -123,10 +171,9 @@ export default function App() {
 
   //Now we handle with error if we put any wrong query in input search filed.
 
-
   //Now we learn about dependency array:
-  //It's tell use effect hook that what to run.
-  //Without this useeffect don't know about what to learn.
+  //It's tell use effect hook that when to run.
+  //Without this useeffect don't know about when to run.
   // There is neccessary for react application that all state and props of useeffect hook pass in dependency array.
   //If dependency array are empty means useeffect hook run only on mount.
   //If have some state and props then run on mount and also when given state and props updtate then it's re-render.
@@ -136,38 +183,45 @@ export default function App() {
 
   //Now we learn about when are effect executed and also learn about time line  of component executions.
   //First of all render (mount) or initial render.
-  //Then commit 
+  //Then commit
   //Then browser paint
   //Then Effects
-  //If state change 
+  //If state change
   //Then re-render
-  //Commit 
-   //Befroe browser paint there is a one state of layout effects
-   //Then browser paint
-   //Effect
+  //Commit
+  //Befroe browser paint there is a one state of layout effects
+  //Then browser paint
+  //Effect
 
-   //At then end 
-   //Effect are  unmounts.
+  //At then end
+  //Effect are  unmounts.
 
   return (
     <>
       <Navbar>
         {" "}
         <NavLogo />
-        <Search />
+        <Search query={query} setQuery={setQuery} />
         <NumResults movies={movies} />{" "}
       </Navbar>
       <Main movies={movies}>
         <MoviesBox>
           {/* {isLoading ? <Footer /> : <MovieList movie={movies} />}{" "} */}
           {isLoading && <Loader />}
-          {!isLoading && !error && <MovieList movie={movies} />}
+          {!isLoading && !error && (
+            <MovieList movie={movies} selectID={setselectedID} />
+          )}
           {error && <ErrorMessage message={error} />}
         </MoviesBox>
         <MoviesBox>
-          <SummaryWathed watched={watched} />
-
-          <WatchedMoviesList watched={watched} />
+          {selectedID ? (
+            <SelectedIDC selectedID={selectedID} onclose={HandleClosebtn} />
+          ) : (
+            <>
+              <SummaryWathed watched={watched} />
+              <WatchedMoviesList watched={watched} />
+            </>
+          )}
         </MoviesBox>
       </Main>
     </>
@@ -218,7 +272,6 @@ function MoviesBox({ children }) {
   const [watched, setWatched] = useState(tempWatchedData);
   const [isOpen, setIsOpen] = useState(true);
   // const [isOpen2, setIsOpen2] = useState(true);
-
   const avgImdbRating = average(watched.map((movie) => movie.imdbRating));
   const avgUserRating = average(watched.map((movie) => movie.userRating));
   const avgRuntime = average(watched.map((movie) => movie.runtime));
@@ -232,21 +285,20 @@ function MoviesBox({ children }) {
   );
 }
 
-function MovieList({ movie }) {
+function MovieList({ movie, selectID }) {
   // const [movies, setMovies] = useState(tempMovieData);
-
   return (
-    <ul className="list">
+    <ul className="list list-movies">
       {movie?.map((movie) => (
-        <Movie movie={movie} key={movie.imdbID} />
+        <Movie movie={movie} key={movie.imdbID} selectID={selectID} />
       ))}
     </ul>
   );
 }
 
-function Movie({ movie }) {
+function Movie({ movie, selectID }) {
   return (
-    <li key={movie.imdbID}>
+    <li key={movie.imdbID} onClick={() => selectID(movie.imdbID)}>
       <img src={movie.Poster} alt={`${movie.Title} poster`} />
       <h3>{movie.Title}</h3>
       <div>
@@ -271,9 +323,7 @@ function NumResults({ movies }) {
   );
 }
 
-function Search() {
-  const [query, setQuery] = useState("");
-
+function Search({ query, setQuery }) {
   return (
     <input
       className="search"
@@ -324,7 +374,7 @@ function SummaryWathed({ watched }) {
 
 function WatchedMoviesList({ watched }) {
   return (
-    <ul className="list">
+    <ul className="list ">
       {watched.map((movie) => (
         <WatchedMoviesLists movie={movie} key={movie.imdbID} />
       ))}
@@ -352,5 +402,87 @@ function WatchedMoviesLists({ movie }) {
         </p>
       </div>
     </li>
+  );
+}
+
+function SelectedIDC({ selectedID, onclose }) {
+  const [Movie, setMovie] = useState([]);
+  const [exterrating, setexterrating] = useState(0);
+  const [isLoading, setisLoading] = useState(false);
+
+  const {
+    Title: title,
+    Year: year,
+    Poster: poster,
+    Runtime: runtime,
+    imdbRating,
+    Plot: plot,
+    Released: released,
+    Actors: actors,
+    Director: director,
+    Genre,
+    genre
+  } = Movie;
+  console.log(title, year);
+  //First we get Undefined,Undefined but in next line we also get tilte and year of Movies.
+  //Why we get undefined,Undefined in first line because before rendering Movie is empty by default sO,.
+
+  useEffect(function () {
+    async function MovieData() {
+      setisLoading(true);
+      const res = await fetch(
+        `http://www.omdbapi.com/?apikey=${KEY}&i=${selectedID}`
+      );
+      const data = await res.json();
+      console.log(data);
+      setMovie(data);
+      setisLoading(false)
+    }
+    MovieData();
+  }, [selectedID]);
+  //If we don't put  selectedID in dependency array then only fist time it show movie details when we click on any movie but when we click on any movie in second time not show details .First movies details show . It is due [] render useeffect only on mount on when state changes it re-render.
+  //Now we add loading functionality in watched movies box:
+
+
+  return (
+    <div className="details">
+    {   isLoading ? <Loader /> :
+    <>
+    <header>
+        <button className="btn-back" onClick={onclose}>
+          &larr;
+        </button>
+        <img src={poster} alt={`Poster of ${poster}`} />
+        <div className="details-overview">
+          <h2>{title}</h2>
+          <p>
+            {released} &bull; {runtime}
+          </p>
+          <p>{genre}</p>
+          <p>
+            <span>⭐</span>
+            {imdbRating} IMDB Rating
+          </p>
+        </div>
+      </header>
+
+      <section>
+        <div className="rating">
+          <StarRating
+            maxrating={10}
+            size={17}
+            Onsetexternalratting={setexterrating}
+          />
+        </div>
+        <p>
+          <em>{plot}</em>
+        </p>
+        <p>Starings {actors}</p>
+        <p>Directed by {director}</p>
+      </section>
+      </>
+      }
+      {/* <div className="details">{selectedID}</div> */}
+    </div>
   );
 }
