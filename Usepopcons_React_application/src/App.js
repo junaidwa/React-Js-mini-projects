@@ -440,7 +440,7 @@ function SelectedIDC({ selectedID, onclose, onAddMovie, watched }) {
   } = Movie;
   console.log(title, year);
   //First we get Undefined,Undefined but in next line we also get tilte and year of Movies.
-  //Why we get undefined,Undefined in first line because before rendering Movie is empty by default sO,.
+  //Why we get undefined,Undefined in first line because before rendering Movie is empty by default so,.
 
   const isAddList = watched.map((movie) => movie.imdbID).includes(selectedID);
   const AlreadyAddedRating = watched.find((mov)=>mov.imdbID===selectedID)?.exterrating;
@@ -463,6 +463,25 @@ function SelectedIDC({ selectedID, onclose, onAddMovie, watched }) {
   );
   //If we don't put  selectedID in dependency array then only fist time it show movie details when we click on any movie but when we click on any movie in second time not show details .First movies details show . It is due [] render useeffect only on mount on when state changes it re-render.
   //Now we add loading functionality in watched movies box:
+
+    useEffect(function(){
+      if(!title) return
+      document.title =`Movie ${title}`;
+
+
+      return function(){
+        document.title ="UsePopCons";
+        console.log(`Movie remove with title ${title}`);
+        //It show console but this run after the component unmount.Then how it remember title variable after component unmuont.
+        //So the anser is that same like closure it remember all the variable that are exist at the time of this creation.
+      }
+      //Here above is the cleanup function that is retrun from useeffect hook.
+      //It run when component unmount.
+      //But same like closure it remember all variable that has been exist at the time of that creation.
+
+
+    },[title]) //Here we change title of whole application with selected movie.
+
 
   function handleAddInList() {
     const newWatchedMovie = {
