@@ -63,6 +63,9 @@ export default function App() {
   function HandleClosebtn() {
     setselectedID(null);
   }
+  function handleAddWatched(movie){
+    setWatched((watched)=>[...watched,movie]);
+  }
 
   //First of all we fetch data in wrong way in react application:
   // fetch(`http://www.omdbapi.com/?apikey=${KEY}&s=interstellar`)
@@ -215,11 +218,11 @@ export default function App() {
         </MoviesBox>
         <MoviesBox>
           {selectedID ? (
-            <SelectedIDC selectedID={selectedID} onclose={HandleClosebtn} />
+            <SelectedIDC selectedID={selectedID} onclose={HandleClosebtn} onAddMovie={handleAddWatched} />
           ) : (
             <>
               <SummaryWathed watched={watched} />
-              <WatchedMoviesList watched={watched} />
+              <WatchedMoviesList watched={watched}  />
             </>
           )}
         </MoviesBox>
@@ -385,8 +388,8 @@ function WatchedMoviesList({ watched }) {
 function WatchedMoviesLists({ movie }) {
   return (
     <li>
-      <img src={movie.Poster} alt={`${movie.Title} poster`} />
-      <h3>{movie.Title}</h3>
+      <img src={movie.poster} alt={`${movie.title} poster`} />
+      <h3>{movie.title}</h3>
       <div>
         <p>
           <span>⭐️</span>
@@ -394,7 +397,7 @@ function WatchedMoviesLists({ movie }) {
         </p>
         <p>
           <span>🌟</span>
-          <span>{movie.userRating}</span>
+          <span>{movie.exterrating}</span>
         </p>
         <p>
           <span>⏳</span>
@@ -405,7 +408,7 @@ function WatchedMoviesLists({ movie }) {
   );
 }
 
-function SelectedIDC({ selectedID, onclose }) {
+function SelectedIDC({ selectedID, onclose,onAddMovie }) {
   const [Movie, setMovie] = useState([]);
   const [exterrating, setexterrating] = useState(0);
   const [isLoading, setisLoading] = useState(false);
@@ -421,67 +424,92 @@ function SelectedIDC({ selectedID, onclose }) {
     Actors: actors,
     Director: director,
     Genre,
-    genre
+    genre,
   } = Movie;
   console.log(title, year);
   //First we get Undefined,Undefined but in next line we also get tilte and year of Movies.
   //Why we get undefined,Undefined in first line because before rendering Movie is empty by default sO,.
 
-  useEffect(function () {
-    async function MovieData() {
-      setisLoading(true);
-      const res = await fetch(
-        `http://www.omdbapi.com/?apikey=${KEY}&i=${selectedID}`
-      );
-      const data = await res.json();
-      console.log(data);
-      setMovie(data);
-      setisLoading(false)
-    }
-    MovieData();
-  }, [selectedID]);
+  useEffect(
+    function () {
+      async function MovieData() {
+        setisLoading(true);
+        const res = await fetch(
+          `http://www.omdbapi.com/?apikey=${KEY}&i=${selectedID}`
+        );
+        const data = await res.json();
+        console.log(data);
+        setMovie(data);
+        setisLoading(false);
+      }
+      MovieData();
+    },
+    [selectedID]
+  );
   //If we don't put  selectedID in dependency array then only fist time it show movie details when we click on any movie but when we click on any movie in second time not show details .First movies details show . It is due [] render useeffect only on mount on when state changes it re-render.
   //Now we add loading functionality in watched movies box:
 
 
+
+
+ function handleAddInList(){
+  
+  const newWatchedMovie={
+    imdbID:selectedID,
+    title,
+    year,
+    poster,
+    imdbRating:Number(imdbRating),
+    runtime: Number( runtime.split(" ").at(0)),
+    exterrating
+  }
+
+
+  onAddMovie(newWatchedMovie)
+  onclose(); //When we click on add then atuomatic
+ }
+
   return (
     <div className="details">
-    {   isLoading ? <Loader /> :
-    <>
-    <header>
-        <button className="btn-back" onClick={onclose}>
-          &larr;
-        </button>
-        <img src={poster} alt={`Poster of ${poster}`} />
-        <div className="details-overview">
-          <h2>{title}</h2>
-          <p>
-            {released} &bull; {runtime}
-          </p>
-          <p>{genre}</p>
-          <p>
-            <span>⭐</span>
-            {imdbRating} IMDB Rating
-          </p>
-        </div>
-      </header>
+      {isLoading ? (
+        <Loader />
+      ) : (
+        <>
+          <header>
+            <button className="btn-back" onClick={onclose}>
+              &larr;
+            </button>
+            <img src={poster} alt={`Poster of ${poster}`} />
+            <div className="details-overview">
+              <h2>{title}</h2>
+              <p>
+                {released} &bull; {runtime}
+              </p>
+              <p>{genre}</p>
+              <p>
+                <span>⭐</span>
+                {imdbRating} IMDB Rating
+              </p>
+            </div>
+          </header>
 
-      <section>
-        <div className="rating">
-          <StarRating
-            maxrating={10}
-            size={17}
-            Onsetexternalratting={setexterrating}
-          />
-        </div>
-        <p>
-          <em>{plot}</em>
-        </p>
-        <p>Starings {actors}</p>
-        <p>Directed by {director}</p>
-      </section>
-      </>
-      }
+          <section>
+            <div className="rating">
+              <StarRating
+                maxrating={10}
+                size={17}
+                Onsetexternalratting={setexterrating}
+              />
+{       exterrating > 0 &&        <button className="btn-add" onClick={handleAddInList}>Add new Movie+</button>
+}            </div>
+            <p>
+              <em>{plot}</em>
+            </p>
+            <p>Starings {actors}</p>
+            <p>Directed by {director}</p>
+          </section>
+        </>
+      )}
       {/* <div className="details">{selectedID}</div> */}
     </div>
   );
