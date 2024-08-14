@@ -63,8 +63,13 @@ export default function App() {
   function HandleClosebtn() {
     setselectedID(null);
   }
-  function handleAddWatched(movie){
-    setWatched((watched)=>[...watched,movie]);
+  function handleAddWatched(movie) {
+    setWatched((watched) => [...watched, movie]);
+  }
+
+  function HandleDelete(id){
+    // watched.filter((mov)=>mov.imdbID !==id);
+    setWatched((watched) =>watched.filter((mov)=>mov.imdbID !==id) );
   }
 
   //First of all we fetch data in wrong way in react application:
@@ -218,11 +223,17 @@ export default function App() {
         </MoviesBox>
         <MoviesBox>
           {selectedID ? (
-            <SelectedIDC selectedID={selectedID} onclose={HandleClosebtn} onAddMovie={handleAddWatched} />
+            <SelectedIDC
+              selectedID={selectedID}
+              onclose={HandleClosebtn}
+              onAddMovie={handleAddWatched}
+              watched={watched}
+              
+            />
           ) : (
             <>
               <SummaryWathed watched={watched} />
-              <WatchedMoviesList watched={watched}  />
+              <WatchedMoviesList watched={watched} onDelete={HandleDelete}/>
             </>
           )}
         </MoviesBox>
@@ -375,17 +386,17 @@ function SummaryWathed({ watched }) {
   );
 }
 
-function WatchedMoviesList({ watched }) {
+function WatchedMoviesList({ watched,onDelete }) {
   return (
     <ul className="list ">
       {watched.map((movie) => (
-        <WatchedMoviesLists movie={movie} key={movie.imdbID} />
+        <WatchedMoviesLists movie={movie} key={movie.imdbID} onDelete={onDelete} />
       ))}
     </ul>
   );
 }
 
-function WatchedMoviesLists({ movie }) {
+function WatchedMoviesLists({ movie ,onDelete}) {
   return (
     <li>
       <img src={movie.poster} alt={`${movie.title} poster`} />
@@ -403,12 +414,13 @@ function WatchedMoviesLists({ movie }) {
           <span>⏳</span>
           <span>{movie.runtime} min</span>
         </p>
+        <button className="btn-delete" onClick={()=>onDelete(movie.imdbID)}>X</button>
       </div>
     </li>
   );
 }
 
-function SelectedIDC({ selectedID, onclose,onAddMovie }) {
+function SelectedIDC({ selectedID, onclose, onAddMovie, watched }) {
   const [Movie, setMovie] = useState([]);
   const [exterrating, setexterrating] = useState(0);
   const [isLoading, setisLoading] = useState(false);
@@ -424,11 +436,14 @@ function SelectedIDC({ selectedID, onclose,onAddMovie }) {
     Actors: actors,
     Director: director,
     Genre,
-    genre,
+    genre
   } = Movie;
   console.log(title, year);
   //First we get Undefined,Undefined but in next line we also get tilte and year of Movies.
   //Why we get undefined,Undefined in first line because before rendering Movie is empty by default sO,.
+
+  const isAddList = watched.map((movie) => movie.imdbID).includes(selectedID);
+  const AlreadyAddedRating = watched.find((mov)=>mov.imdbID===selectedID)?.exterrating;
 
   useEffect(
     function () {
@@ -449,25 +464,20 @@ function SelectedIDC({ selectedID, onclose,onAddMovie }) {
   //If we don't put  selectedID in dependency array then only fist time it show movie details when we click on any movie but when we click on any movie in second time not show details .First movies details show . It is due [] render useeffect only on mount on when state changes it re-render.
   //Now we add loading functionality in watched movies box:
 
+  function handleAddInList() {
+    const newWatchedMovie = {
+      imdbID: selectedID,
+      title,
+      year,
+      poster,
+      imdbRating: Number(imdbRating),
+      runtime: Number(runtime.split(" ").at(0)),
+      exterrating
+    };
 
-
-
- function handleAddInList(){
-  
-  const newWatchedMovie={
-    imdbID:selectedID,
-    title,
-    year,
-    poster,
-    imdbRating:Number(imdbRating),
-    runtime: Number( runtime.split(" ").at(0)),
-    exterrating
+    onAddMovie(newWatchedMovie);
+    onclose(); //When we click on add then atuomatic
   }
-
-
-  onAddMovie(newWatchedMovie)
-  onclose(); //When we click on add then atuomatic
- }
 
   return (
     <div className="details">
@@ -494,14 +504,22 @@ function SelectedIDC({ selectedID, onclose,onAddMovie }) {
           </header>
 
           <section>
-            <div className="rating">
-              <StarRating
-                maxrating={10}
-                size={17}
-                Onsetexternalratting={setexterrating}
-              />
-{       exterrating > 0 &&        <button className="btn-add" onClick={handleAddInList}>Add new Movie+</button>
-}            </div>
+            {!isAddList ? (
+              <div className="rating">
+                <StarRating
+                  maxrating={10}
+                  size={17}
+                  Onsetexternalratting={setexterrating}
+                />
+                {exterrating > 0 && (
+                  <button className="btn-add" onClick={handleAddInList}>
+                    Add new Movie+
+                  </button>
+                )}{" "}
+              </div>
+            ) : (
+              <p>You already Added it and also rate it {AlreadyAddedRating} <span>⭐</span></p>
+            )}
             <p>
               <em>{plot}</em>
             </p>
