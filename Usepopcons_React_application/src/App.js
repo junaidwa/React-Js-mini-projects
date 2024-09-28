@@ -1,5 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import StarRating from "./StarRating";
+import fetchdata from './fetchdata';
+import {useLocaLstorageState} from "./useLocaLstorageState";
+import { UseKey } from "./UseKey";
 const tempMovieData = [
   {
     imdbID: "tt1375666",
@@ -50,22 +53,40 @@ const tempWatchedData = [
 const average = (arr) =>
   arr.reduce((acc, cur, i, arr) => acc + cur / arr.length, 0);
 
-const KEY = "7a0948e9";
+const KEY = "7a0948e9";  //Our specific key for fetching data from API.
 
 export default function App() {
   const [query, setQuery] = useState("inception");
   const [movies, setMovies] = useState([]);
-  const [watched, setWatched] = useState([]);
   const [isLoading, setisLoading] = useState(false);
   const [error, seterror] = useState();
   const [selectedID, setselectedID] = useState(null);
+
+  // const [watched, setWatched] = useState([]);
+ 
+  const initialValue =[];
+  // const [watched, setWatched] = useState(() => {
+  //   const storedValue = localStorage.getItem('watched');
+  //   return storedValue ? JSON.parse(storedValue) : [];
+  // });  //Now we want to read local storage data  //It's work fine
+  //use above three to four code in custom hook useLocalStoarge file.
+  const [watched,setWatched]= useLocaLstorageState(initialValue,"watched");
+  
 
   function HandleClosebtn() {
     setselectedID(null);
   }
   function handleAddWatched(movie) {
     setWatched((watched) => [...watched, movie]);
+    // localStorage.setItem("watched",JSON.stringify([...watched,watched]));
+    //With this data store in localStorage in application tab in console.
+    //But we do this inside react bcz when function mount then data also store
   }
+  useEffect(function(){
+     localStorage.setItem('watched',JSON.stringify(watched))
+    
+  },[watched])  //With this we only store data in local storage but now  we want to read that data on our UI.
+  //Thanks effect for syncronize localstorae with watched state.
 
   function HandleDelete(id){
     // watched.filter((mov)=>mov.imdbID !==id);
@@ -76,7 +97,7 @@ export default function App() {
   // fetch(`http://www.omdbapi.com/?apikey=${KEY}&s=interstellar`)
   //   .then((res) => res.json())
   //   .then((data) => {
-  //     setMovies(data.Search); //It's work but in network sectin there are infinte number of requests send this. Because as we learn in previous section that is we don't update any state in render section .When we break rule of react js then we see this error.To overcome this problem  we use useeffect hook .If we use console.log to get data in console then it's work fine.In this case our component state change or update on every render but we use useeffect hook to control rendering.In this code our componenet render in four way. First when intial render menas intial app and second when state and props chagne third when parent component render and fourth with virtual Dom etc.
+  //     setMovies(data.Search); //It's work but in network sectiOn there are infinte number of requests send this. Because as we learn in previous section that is we don't update any state in render section .When we break rule of react js then we see this error.To overcome this problem  we use useeffect hook .If we use console.log to get data in console then it's work fine.In this case our component state change or update on every render but we use useeffect hook to control rendering.In this code our componenet render in four way. First when intial render menas intial app and second when state and props chagne third when parent component render and fourth with virtual Dom etc.
   //   });
 
   //We use useeffect hook and allow to render only when component mount means for initial render by passing empty dependency array.
@@ -95,7 +116,7 @@ export default function App() {
   //First of all I explain side effects. Side effect is basically interaction between react component and outside the word of component.For example when we work with API then we want to create side effects to fetch data from API.
   //There are two ways to create side effects .One is eventhandler and second effects(useeffecthooks).
   //Event handler create side effect when certain events handle but on the other hand effects create side effects when components mount or intial render.
-  //Event handler is also a preferred way of creating side effects but to solve or overcome sove problem use effects to create side effects with the help of dependency array.When dependency array is empty then means we want ot create side effects only when component mounts.
+  //Event handler is also a preferred way of creating side effects but to solve or overcome soMe problem use effects to create side effects with the help of dependency array.When dependency array is empty then means we want ot create side effects only when component mounts.
 
   //As we know that we fetch data with asyn function and promises so We use asyn function to fect movies data.
   // const tempQuery = `interstellar`; //Now it's not use because not we use query state that store value of search input.
@@ -106,72 +127,14 @@ export default function App() {
   //   console.log("A")
   // }) //with no dependency array means render with every things
 
-  // useEffect(function(){
-  //   console.log("B")
-  // },[])  //Empty array means render only on mount
-  // console.log("C")
-  //In console there are many number of print due to many render but important thing is that in first C print bcz we use asyncronys Coding and alone console print before with out any other waiting.
-  //Then A print because It's console render on every mount
-  //And then B render and it's console render only on only intial mount.
+  fetchdata(setisLoading,seterror,setMovies,HandleClosebtn,query,KEY);
+   //It's a custom hook calling .Please go to fetchdata file and read some notes.
 
-  // useEffect(function () {
-  //   console.log("After Initial Render");
-  // }, []);
-  // useEffect(function () {
-  //   console.log("On Every Render");
-  // });
-  // useEffect(
-  //   function () {
-  //     console.log("Only when state update");
-  //   },
-  //   [query]
-  // );
-  // console.log("Not depends on any rendering");
-  //When we upddate state then in given order console log prints in browser:
-  //  Not depends on any rendering
-  //  After Initial Render
-  //  On Every Render
-  //  Only when state update
 
-  useEffect(() => {
-    async function fetchMovies() {
-      try {
-        setisLoading(true); // Start loading
-        seterror("");
 
-        const res = await fetch(
-          `http://www.omdbapi.com/?apikey=${KEY}&s=${query}`
-        );
-        if (!res.ok) throw new Error("Fetch failed");
 
-        const data = await res.json();
 
-        if (!data.Search) {
-          throw new Error("No movies found");
-        }
-
-        if (data.response === "false") throw new Error("Movies Not Fount");
-
-        setMovies(data.Search);
-        console.log(data.Search);
-        seterror(null); // Clear any previous errors
-      } catch (err) {
-        console.log(err.message);
-        seterror(err.message);
-      } finally {
-        setisLoading(false); // End loading
-      }
-    }
-    if (!query.length) {
-      //If there is no search query then movies box are empty with no any message. In second option we put any default move in query State.
-      setMovies([]);
-      seterror("");
-      return;
-    }
-
-    fetchMovies();
-  }, [query]);
-  //     //Now we get two array object becasue this is due to strict mode of react js.If we remove strit mode from index.js then we have return only one objects. And returning of two object only in development stage.When we deploy our application then by default we get only one objects.
+  //Now we get two array object becasue this is due to strict mode of react js.If we remove strit mode from index.js then we have return only one objects. And returning of two object only in development stage.When we deploy our application then by default we get only one objects.
 
   //Now it's work fine .
 
@@ -182,7 +145,7 @@ export default function App() {
   //Now we learn about dependency array:
   //It's tell use effect hook that when to run.
   //Without this useeffect don't know about when to run.
-  // There is neccessary for react application that all state and props of useeffect hook pass in dependency array.
+  //There is neccessary for react application that all state and props of useeffect hook pass in dependency array.
   //If dependency array are empty means useeffect hook run only on mount.
   //If have some state and props then run on mount and also when given state and props updtate then it's re-render.
   // If we don't put dependecy array in useeffect hook then means component re-render on every rendering.
@@ -338,6 +301,37 @@ function NumResults({ movies }) {
 }
 
 function Search({ query, setQuery }) {
+//  useEffect(function(){
+//   const el = document.querySelector('.search');
+//   el.focus();
+//   setQuery(' ');
+//  },[]) //It's work fine, actually we wnat when we open application then by default cursor focus in search bar.It's work.
+ //But we don't do like this because react is decalarative and manually select element and then .focus() apply is not a react work.
+ // For this we use useRef() hook.
+ const inputEL = useRef(null);
+
+//  useEffect(function(){
+   
+//    function CallBack(e){
+//      if(inputEL.current === document.activeElement) return ;
+//      if(e.code==="Enter"){
+//       inputEL.current.focus();
+//       setQuery("");  //It's work fine .
+//     }
+//   }
+//   document.addEventListener("keydown",CallBack);
+//   return ()=> document.addEventListener("keydown",CallBack);
+// // 
+//  },[setQuery])
+UseKey("Enter",function(){
+       if(inputEL.current === document.activeElement) return ;
+    
+      inputEL.current.focus();
+      setQuery("");  //It's work fine .
+   
+})
+
+
   return (
     <input
       className="search"
@@ -345,6 +339,7 @@ function Search({ query, setQuery }) {
       placeholder="Search movies..."
       value={query}
       onChange={(e) => setQuery(e.target.value)}
+      ref={inputEL}
     />
   );
 }
@@ -444,6 +439,29 @@ function SelectedIDC({ selectedID, onclose, onAddMovie, watched }) {
 
   const isAddList = watched.map((movie) => movie.imdbID).includes(selectedID);
   const AlreadyAddedRating = watched.find((mov)=>mov.imdbID===selectedID)?.exterrating;
+  
+  //Now we want to add functionality of closing moviedetails with pressing escape key
+  // useEffect(function(){
+  //   function CallBack(e){
+  //     if(e.code ==="Escape"){
+  //       onclose();
+  //       // console.log("Closing");
+  //     }
+  //   }
+  //   document.addEventListener("keydown",CallBack)
+  //   document.removeEventListener("keydown",CallBack)
+
+
+  // },[onclose])
+  //Custom Hook
+
+ UseKey("Escape",onclose);
+
+
+
+
+
+
 
   useEffect(
     function () {
@@ -551,3 +569,37 @@ function SelectedIDC({ selectedID, onclose, onAddMovie, watched }) {
     </div>
   );
 }
+
+// 1. :
+//There are two rules of Hooks:
+//1. Only Hook call at top level.(Donot call hook in inside the any condition)
+//2.  Only calls hook from React Functions.
+//These rules are automatically enforced by ESLINT.
+
+// 2. Here use Callback function for updaing state
+// If I want to update any state and then use it but state not update.
+// For using updated state , we use callback function at set update state.
+// Simply for updating state we use callback function , without this state are updated.
+
+// 3. Now work with localstorage means use callback for initializing state.
+//localStorage:
+//This is key value pair storage that is avaiable in browser.
+//In local Storage, store only keyvalue pair in string form.
+
+
+// 4 Introduction to another hook that is useRef.
+// In react ,we avoid manually selectiong any element .
+// To overcome this we use useRef hook for storing DOM Elements.
+//With this hook, we change any property of selecting elements.
+//Second usecase of this hook is that this persisted between renders.
+//means when we click multiple time on stasrt rating functionality then with this hook we count number of count and then display in summary average click.
+
+
+// 5 Customs Hook:
+//In react , we want our UI reuse and our login also reuse
+//We resue our UI with component reuse. but we reuse our logic with custom hooks.
+//This allow us to reuse non-visual logic between components.
+//Custom hook like a javaScript function that receive some data not props and also return some data.
+//It's name must start with use like hooks name. Withourt it's a simple function not custom hook.
+//In above code we reuse some our logic.
+
